@@ -27,6 +27,8 @@ public:
         int32_t top_k = 40;
         float   top_p = 0.9f;
         float   temp = 0.9f;
+        float   tfs_z = 1.0f;           // tail free sampling, parameter z (1.0 = disabled)
+        float   typical_p = 1.0f;       // locally typical sampling, parameter p (1.0 = disabled)
         int32_t n_batch = 9;
         float   repeat_penalty = 1.10f;
         int32_t repeat_last_n = 64;     // last n tokens to penalize

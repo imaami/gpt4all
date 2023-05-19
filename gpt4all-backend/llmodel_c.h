@@ -42,6 +42,8 @@ struct llmodel_prompt_context {
     int32_t top_k;          // top k logits to sample from
     float top_p;            // nucleus sampling probability threshold
     float temp;             // temperature to adjust model's output distribution
+    float tfs_z;            // tail free sampling, parameter z (1.0 = disabled)
+    float typical_p;        // locally typical sampling, parameter p (1.0 = disabled)
     int32_t n_batch;        // number of predictions to generate in parallel
     float repeat_penalty;   // penalty factor for repeated tokens
     int32_t repeat_last_n;  // last n tokens to penalize

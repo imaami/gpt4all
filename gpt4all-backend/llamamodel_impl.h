@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <llama.h>
 #include "llmodel.h"
 
 struct LLamaPrivate;
@@ -33,6 +34,7 @@ protected:
         std::function<bool(bool)> recalculate) override;
 
 private:
+    llama_token sample_top_p_top_k(PromptContext &promptCtx);
     LLamaPrivate *d_ptr;
 };
 

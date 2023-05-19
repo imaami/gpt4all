@@ -25,7 +25,6 @@
 #include <thread>
 #include <unordered_set>
 
-#include <llama.h>
 #include <ggml.h>
 
 namespace {
@@ -57,16 +56,13 @@ struct LLamaPrivate {
     bool empty = true;
 };
 
-static int llama_sample_top_p_top_k(
-        llama_context *ctx,
-        const llama_token *last_n_tokens_data,
-        int last_n_tokens_size,
-        int top_k,
-        float top_p,
-        float temp,
-        float repeat_penalty) {
-    auto logits = llama_get_logits(ctx);
-    auto n_vocab = llama_n_vocab(ctx);
+llama_token LLamaModel::sample_top_p_top_k(PromptContext &promptCtx)
+{
+    const auto last_n_tokens_size = std::min(static_cast<std::size_t>(promptCtx.repeat_last_n), promptCtx.tokens.size());
+    const auto *last_n_tokens_data = &promptCtx.tokens.data()[promptCtx.tokens.size() - last_n_tokens_size];
+
+    auto logits = llama_get_logits(d_ptr->ctx);
+    auto n_vocab = llama_n_vocab(d_ptr->ctx);
     // Populate initial list of all candidates
     std::vector<llama_token_data> candidates;
     candidates.reserve(n_vocab);
@@ -75,14 +71,14 @@ static int llama_sample_top_p_top_k(
     }
     llama_token_data_array candidates_p = {candidates.data(), candidates.size(), false};
     // Sample repeat penalty
-    llama_sample_repetition_penalty(nullptr, &candidates_p, last_n_tokens_data, last_n_tokens_size, repeat_penalty);
+    llama_sample_repetition_penalty(nullptr, &candidates_p, last_n_tokens_data, last_n_tokens_size, promptCtx.repeat_penalty);
     // Temperature sampling
-    llama_sample_top_k(ctx, &candidates_p, top_k, 1);
-    llama_sample_tail_free(ctx, &candidates_p, 1.0f, 1);
-    llama_sample_typical(ctx, &candidates_p, 1.0f, 1);
-    llama_sample_top_p(ctx, &candidates_p, top_p, 1);
-    llama_sample_temperature(ctx, &candidates_p, temp);
-    return llama_sample_token(ctx, &candidates_p);
+    llama_sample_top_k(d_ptr->ctx, &candidates_p, promptCtx.top_k, 1);
+    llama_sample_tail_free(d_ptr->ctx, &candidates_p, promptCtx.tfs_z, 1);
+    llama_sample_typical(d_ptr->ctx, &candidates_p, promptCtx.typical_p, 1);
+    llama_sample_top_p(d_ptr->ctx, &candidates_p, promptCtx.top_p, 1);
+    llama_sample_temperature(d_ptr->ctx, &candidates_p, promptCtx.temp);
+    return llama_sample_token(d_ptr->ctx, &candidates_p);
 }
 
 LLamaModel::LLamaModel()
@@ -233,11 +229,7 @@ void LLamaModel::prompt(const std::string &prompt,
     int32_t totalPredictions = 0;
     for (int i = 0; i < promptCtx.n_predict; i++) {
         // sample next token
-        const size_t n_prev_toks = std::min((size_t) promptCtx.repeat_last_n, promptCtx.tokens.size());
-        llama_token id = llama_sample_top_p_top_k(d_ptr->ctx,
-            promptCtx.tokens.data() + promptCtx.tokens.size() - n_prev_toks,
-            n_prev_toks, promptCtx.top_k, promptCtx.top_p, promptCtx.temp,
-            promptCtx.repeat_penalty);
+        llama_token id = sample_top_p_top_k(promptCtx);
 
         // Check if the context has run out...
         if (promptCtx.n_past + 1 > promptCtx.n_ctx) {

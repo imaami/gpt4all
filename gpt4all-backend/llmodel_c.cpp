@@ -123,6 +123,8 @@ void llmodel_prompt(llmodel_model model, const char *prompt,
     wrapper->promptContext.top_k = ctx->top_k;
     wrapper->promptContext.top_p = ctx->top_p;
     wrapper->promptContext.temp = ctx->temp;
+    wrapper->promptContext.tfs_z = ctx->tfs_z;
+    wrapper->promptContext.typical_p = ctx->typical_p;
     wrapper->promptContext.n_batch = ctx->n_batch;
     wrapper->promptContext.repeat_penalty = ctx->repeat_penalty;
     wrapper->promptContext.repeat_last_n = ctx->repeat_last_n;
@@ -145,6 +147,8 @@ void llmodel_prompt(llmodel_model model, const char *prompt,
     ctx->top_k = wrapper->promptContext.top_k;
     ctx->top_p = wrapper->promptContext.top_p;
     ctx->temp = wrapper->promptContext.temp;
+    ctx->tfs_z = wrapper->promptContext.tfs_z;
+    ctx->typical_p = wrapper->promptContext.typical_p;
     ctx->n_batch = wrapper->promptContext.n_batch;
     ctx->repeat_penalty = wrapper->promptContext.repeat_penalty;
     ctx->repeat_last_n = wrapper->promptContext.repeat_last_n;

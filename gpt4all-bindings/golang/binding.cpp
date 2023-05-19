@@ -93,6 +93,8 @@ void gptj_model_prompt( const char *prompt, void *m, char* result, int repeat_la
         .top_k = 10,
         .top_p = 0.9,
         .temp = 1.0,
+        .tfs_z = 1.0f,
+        .typical_p = 1.0f,
         .n_batch = 1,
         .repeat_penalty = 1.2,
         .repeat_last_n = 10,
