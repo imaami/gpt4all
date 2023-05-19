@@ -1,12 +1,7 @@
 #include "../../gpt4all-backend/llmodel_c.h"
-#include "../../gpt4all-backend/llmodel.h"
-#include "../../gpt4all-backend/llama.cpp/llama.h"
 #include "../../gpt4all-backend/llmodel_c.cpp"
-#include "../../gpt4all-backend/mpt.h"
 #include "../../gpt4all-backend/mpt.cpp"
 
-#include "../../gpt4all-backend/llamamodel.h"
-#include "../../gpt4all-backend/gptj.h"
 #include "binding.h"
 #include <cassert>
 #include <cmath>
@@ -21,10 +16,10 @@
 
 void* load_mpt_model(const char *fname, int n_threads) {
     // load the model
-    auto gptj = llmodel_mpt_create();
+    auto gptj = llmodel_model_create2(fname, "MPT", nullptr);
 
-    llmodel_setThreadCount(gptj,  n_threads);
-    if (!llmodel_loadModel(gptj, fname)) {
+    llmodel_set_thread_count(gptj,  n_threads);
+    if (!llmodel_model_load(gptj, fname)) {
         return nullptr;
     }
 
@@ -33,10 +28,10 @@ void* load_mpt_model(const char *fname, int n_threads) {
 
 void* load_llama_model(const char *fname, int n_threads) {
     // load the model
-    auto gptj = llmodel_llama_create();
+    auto gptj = llmodel_model_create2(fname, "LLAMA", nullptr);
 
-    llmodel_setThreadCount(gptj,  n_threads);
-    if (!llmodel_loadModel(gptj, fname)) {
+    llmodel_set_thread_count(gptj,  n_threads);
+    if (!llmodel_model_load(gptj, fname)) {
         return nullptr;
     }
 
@@ -45,10 +40,10 @@ void* load_llama_model(const char *fname, int n_threads) {
 
 void* load_gptj_model(const char *fname, int n_threads) {
     // load the model
-    auto gptj = llmodel_gptj_create();
+    auto gptj = llmodel_model_create2(fname, "GPTJ", nullptr);
 
-    llmodel_setThreadCount(gptj,  n_threads);
-    if (!llmodel_loadModel(gptj, fname)) {
+    llmodel_set_thread_count(gptj,  n_threads);
+    if (!llmodel_model_load(gptj, fname)) {
         return nullptr;
     }
 
@@ -61,23 +56,23 @@ void * mm;
 void gptj_model_prompt( const char *prompt, void *m, char* result, int repeat_last_n, float repeat_penalty, int n_ctx, int tokens, int top_k,
                             float top_p, float temp, int n_batch,float ctx_erase)
 {
-    llmodel_model* model = (llmodel_model*) m;
+    auto model = reinterpret_cast<llmodel_model>(m);
 
    // std::string res = "";
  
-    auto lambda_prompt = [](int token_id, const char *promptchars)  {
+    auto lambda_prompt = [](int token_id) -> int {
 	        return true;
     };
 
     mm=model;
     res="";
 
-    auto lambda_response = [](int token_id, const char *responsechars) {
+    auto lambda_response = [](int token_id, const char *responsechars) -> int {
         res.append((char*)responsechars);
         return !!getTokenCallback(mm, (char*)responsechars);
 	};
 	
-	auto lambda_recalculate = [](bool is_recalculating) {
+	auto lambda_recalculate = [](int is_recalculating) -> int {
 	        // You can handle recalculation requests here if needed
 	    return is_recalculating;
 	};
@@ -121,7 +116,7 @@ void gptj_model_prompt( const char *prompt, void *m, char* result, int repeat_la
 }
 
 void gptj_free_model(void *state_ptr) {
-    llmodel_model* ctx = (llmodel_model*) state_ptr;
-    llmodel_llama_destroy(ctx);
+    auto model = reinterpret_cast<llmodel_model>(state_ptr);
+    llmodel_model_destroy(&model);
 }
 
